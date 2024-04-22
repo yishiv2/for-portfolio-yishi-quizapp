@@ -1,0 +1,71 @@
+* {
+  font-family: 'Baloo 2', cursive; /* すべての要素にBaloo 2を適用 */
+}
+
+
+body {
+  margin: 10px;
+  padding-bottom: 10px;
+
+
+  background-image: url('../public/abstquiz-backgrand3.webp'); /* 画像のパスを指定 */
+  background-size: cover; /* 画像がコンテナを覆うように設定 */
+  background-position: center; /* 画像が中央に来るように設定 */
+  background-repeat: no-repeat; /* 画像を繰り返さない */
+  height: 100vh; /* 高さをビューポートの100%に設定 */
+  width: 100vw; /* 幅をビューポートの100%に設定 */
+  background-attachment: fixed;
+}
+
+.site-header {
+  color: #d0cbec;
+  padding: 20px 50;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+
+.site-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.site-header nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.site-header nav ul li {
+  display: inline;
+  margin-left: 20px;
+  position: relative; /* 相対位置 */
+}
+
+.site-header nav ul li a {
+  text-decoration: none;
+  color: #d0cbec; 
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.site-header nav ul li a:hover {
+  color: #3498db; /* ホバー時に色を変更 */
+}
+
+.site-header nav ul li:not(:last-child):after {
+  content: ""; /* 疑似要素のコンテンツ */
+  position: absolute; /* 絶対位置 */
+  right: -10px; /* 右端から10pxの位置 */
+  top: 0; /* 上端 */
+  bottom: 0; /* 下端 */
+  width: 1px; /* 線の幅 */
+  background-color: #fff; /* 線の色 */
+  display: block; /* ブロック表示 */
+}
+
+.header-container {
+  width: 80%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

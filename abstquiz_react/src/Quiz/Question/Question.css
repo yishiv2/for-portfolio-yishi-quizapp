@@ -1,0 +1,195 @@
+
+
+
+.outline {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 垂直方向に中央揃え */
+}
+
+.image-hint-container {
+  display: flex;
+  gap: 10px; /* 要素間の間隔を調整 */
+  align-items: flex-start;
+  position: relative;
+}
+
+
+/* 画像コンテナのスタイリング */
+.image-container {
+  position: relative; /* 重なり合う要素の親コンテナに相対位置を指定 */
+  text-align: center;
+  margin: 20px 0; /* 画像の上下に余白を追加 */
+  width: 500px; /* 幅を800pxに設定 */
+  height:500px; /* 高さを600pxに設定 */
+}
+
+/* ヒントコンテナのスタイリング */
+.hint {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* ヒント間のスペース */
+}
+
+/* 個々のヒントアイテムのスタイリング */
+.hint-item {
+  padding: 10px;
+  background-color: #ffffff; /* 白い背景色 */
+  border: 1px solid #ddd; /* 軽い境界線 */
+  border-radius: 8px; /* 角を丸くする */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* ソフトな影を追加 */
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.hint-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ホバー時に強調された影 */
+}
+
+/* ヒントテキストのスタイリング */
+.hint-text {
+  font-size: 16px;
+  color: #333;
+}
+
+
+.hint-index button {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background-color: #3498db; /* 鮮やかな青色 */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.hint-index button:hover {
+  background-color: #2980b9; /* 濃い青色に変更 */
+  transform: scale(1.05); /* 少し拡大 */
+}
+
+.hint-index button:active {
+  transform: scale(0.95); /* クリック時に少し縮小 */
+}
+
+
+
+
+.image-container img {
+  max-width: 100%; /* 画像の最大幅をコンテナの100%に */
+  max-height: 300px; /* 画像の高さを制限 */
+  object-fit: cover; /* 画像がコンテナにフィットするように */
+  cursor: pointer; /* クリック可能な要素としての手がかり */
+}
+
+.inner-image-container img {
+  max-width: 400px; /* または必要に応じて調整 */
+  max-height: 400px; /* または必要に応じて調整 */
+  object-fit: cover;
+  cursor: pointer;
+  padding: 8px; /* 額縁のような効果を与えるためのパディング */
+  border: 5px solid #d4af37; /* 金色の枠線 */
+  background-color: #faf8f5; /* 額縁の背景色 */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* 影を追加して立体感を出す */
+  display: block; /* ブロックレベル要素として扱う */
+  margin: 0px auto; /* 上下にマージンを設定し、横方向は中央揃えに */
+  margin-bottom: 20px; /* 下部に追加のマージン */
+  border-radius: 4px; /* 額縁の角を丸める */
+}
+
+/* ナビゲーションボタンのスタイリング */
+.nav-button {
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  padding: 10px 20px;
+  background-color: rgba(232, 92, 74, 0); /* 透明な背景色 */
+  color: #f4f4f8;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+/* 左ボタンのスタイル */
+.nav-button.left {
+  left: 0;
+}
+
+/* 右ボタンのスタイル */
+.nav-button.right {
+  right: 0;
+}
+
+/* ボタンのホバー時のスタイル */
+.nav-button:hover {
+  background-color: rgba(232, 92, 74, 0.5); /* ホバー時の半透明な背景色 */
+}
+
+
+/* 回答と説明のコンテナのスタイリング */
+.answer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 垂直方向に中央揃え */
+  text-align: center;
+  margin-top: -70px; /* 回答コンテナに上部の余白を追加 */
+  background-color: aliceblue;
+  max-width: 80%;
+  padding: 0 20px 20px 20px; /* 左右下の余白を追加 */
+  border-radius: 10px; /* コンテナの角を丸くする */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* コンテナに影を追加 */
+}
+
+.answer-text {
+  font-size: 30px;
+  color: #afd7b0; /* 回答の色 */
+  margin-bottom: 20px; /* 回答テキストの下部に余白を追加 */
+}
+
+.answer-text span {
+  background-color: #FF6B6B; /* テキストの周りの背景色を鮮やかな赤に設定 */
+  padding: 8px 16px; /* テキストの周りに余白を追加 */
+  border-radius: 8px; /* 角をより丸くする */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* より目立つ影を追加 */
+  color: #FFFFFF; /* テキストの色を白に設定 */
+  font-weight: bold; /* テキストを太字にする */
+}
+
+.answer-explanation {
+  font-size: 20px;
+  color: #333; /* 説明の色 */
+}
+/* 画像をクリックすると答えと説明が表示されるスタイリング */
+.image-click-hint {
+  position: relative; /* 答えと説明を絶対位置で配置 */
+  top: 10px; /* 画像の上部からの位置 */
+  left: 50%; 
+  transform: translateX(-50%); /* 水平方向に中央揃え */
+  background-color: rgba(255, 255, 255, 0.8); /* 半透明の背景色 */
+  padding: 10px; /* 内側の余白 */
+  border-radius: 5px; /* 角を丸く */
+}
+
+
+/* ローダーのスタイリング */
+.loader {
+  border: 12px solid #f3f3f3; /* 枠線を太く */
+  border-top: 12px solid #3498db; /* 上部の色を青に */
+  border-radius: 50%;
+  width: 80px; /* 幅を大きく */
+  height: 80px; /* 高さを大きく */
+  animation: spin 1s linear infinite;
+  position: fixed; /* ローダーを中央に固定 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

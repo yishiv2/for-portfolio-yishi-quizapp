@@ -1,0 +1,94 @@
+/* クイズ一覧のスタイリング */
+
+/* 見出しのスタイリング */
+h1, h2 {
+  text-align: center; /* 中央揃え */
+  color: #d0cbec; 
+  -webkit-text-stroke: 1px black; /* Webkitブラウザ向けのアウトライン */
+  text-shadow:
+    -1px -1px 0 #000,  
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000; /* シンプルなアウトライン効果 */
+}
+
+h1 {
+  font-size: 36px; /* フォントサイズを大きく */
+  margin-top: 20px; /* 上のマージンを設定 */
+  margin-bottom: 10px; /* 下のマージンを設定 */
+  font-weight: bold; /* 太字に */
+}
+
+h2 {
+  font-size: 28px; /* フォントサイズを適切に */
+  margin-top: 15px; /* 上のマージンを設定 */
+  margin-bottom: 5px; /* 下のマージンを設定 */
+}
+
+
+.app-description {
+  margin: 20px auto;
+  padding: 10px;
+  width: 90%;
+  max-width: 800px;
+  background-color: rgba(248, 249, 250, 0.9); /* 背景色を半透明に調整 */
+  border: #b0a7a7 1px solid; /* ボーダーを設定 */
+  border-left: 4px solid #3498db; /* 左側に色のアクセント */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 軽い影をつける */
+  font-size: 16px;
+  text-align: center; /* 中央揃え */
+
+}
+
+ul {
+  display: flex; /* フレックスボックスを有効化 */
+  flex-wrap: wrap; /* アイテムがコンテナ幅を超えた場合に折り返し */
+  list-style-type: none; /* リストのスタイルをなしに設定 */
+  padding: 0;
+  margin: 0 auto; /* 中央寄せ */
+  width: 100%; /* 幅を100%に設定 */
+}
+
+li {
+  background-color: rgba(255, 255, 255, 0.8); /* リストアイテムの背景色を薄く半透明に */
+  margin: 10px; /* リストアイテムの外側の余白 */
+  padding: 12px 20px; /* リストアイテムの内側の余白 */
+  border-radius: 4px; /* ボーダーの角を丸くする */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12); /* 影をつける */
+  border: #b0a7a7 1px solid; /* ボーダーを設定 */
+  transition: transform 0.3s ease; /* 移動にトランジション効果を追加 */
+  text-align: center; /* 中央揃え */
+}
+
+li:hover {
+  background-color: rgba(233, 236, 239, 0.95); /* ホバー時の背景色を少し濃く */
+  cursor: pointer; /* カーソルをポインターに変更 */
+  transform: translateY(-5px); /* ホバー時に少し上に移動 */
+}
+
+a {
+  text-decoration: none; /* リンクの下線を消す */
+  color: #282c34; /* リンクの色をヘッダーの背景色に合わせる */
+  font-size: 18px; /* フォントサイズ */
+  display: block; /* リンクをブロック要素にする */
+}
+
+
+/* ローダーのスタイリング */
+.loader {
+  border: 12px solid #f3f3f3; /* 枠線を太く */
+  border-top: 12px solid #3498db; /* 上部の色を青に */
+  border-radius: 50%;
+  width: 80px; /* 幅を大きく */
+  height: 80px; /* 高さを大きく */
+  animation: spin 1s linear infinite;
+  position: fixed; /* ローダーを中央に固定 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

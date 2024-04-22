@@ -1,0 +1,41 @@
+.quiz-header {
+  text-align: center;
+}
+
+
+/* プログレスインジケータのスタイリング */
+.progress-indicator {
+  text-align: center;
+  font-size: 24px; /* フォントサイズを大きくする */
+  font-weight: bold; /* テキストを太字に */
+  color: #e85c4a; /* 目を引く色に変更 */
+  margin: 30px 0; /* より大きな上下のマージン */
+  padding: 10px 10px; /* 上下のパディング */
+  background-color: #f8f9fa; /* 背景色を薄い色にして目立たせる */
+  border-radius: 5px; /* 角を軽く丸める */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* ソフトな影を加える */
+  display: inline-block; /* 背景色とパディングを適用するため */
+  width: auto; /* 自動的にテキストの長さに合わせる */
+  transition: all 0.3s ease; /* ホバーなどのトランジション効果 */
+  display: inline-block;
+  margin-top: -5px;
+}
+
+
+.back-button {
+  background-color: #f8f9fa; /* 暖かいオレンジ色 */
+  color: #e85c4a; /* 白色テキスト */
+  border: black; /* ボーダーなし */
+  padding: 5px 10px; /* パディング */
+  font-size: 16px; /* フォントサイズ */
+  border-radius: 5px; /* 角の丸み */
+  cursor: pointer; /* カーソルをポインターに */
+  transition: background-color 0.3s ease; /* 背景色の変化を滑らかに */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* ソフトな影を加える */
+  font-weight: bold; /* テキストを太字に */
+}
+
+.back-button:hover {
+  background-color: #f3ca58; /* ホバー時のより暗いオレンジ色 */
+  transition: background-color 0.3s, transform 0.3s;
+}
