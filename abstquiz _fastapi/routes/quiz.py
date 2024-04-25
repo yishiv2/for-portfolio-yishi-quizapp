@@ -60,9 +60,8 @@ async def get_quizzes_by_set(quiz_set_id: str, collection: any = Depends(get_fir
         logger.error(f"Unexpected error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # 全ての問題データを取得
-
-
 @router.get("", response_model=List[QuizResponse])
 async def get_all_quizzes(collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:

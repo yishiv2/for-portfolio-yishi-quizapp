@@ -22,60 +22,8 @@
   margin: 20px 0; /* 画像の上下に余白を追加 */
   width: 500px; /* 幅を800pxに設定 */
   height:500px; /* 高さを600pxに設定 */
+  overflow-y: auto;
 }
-
-/* ヒントコンテナのスタイリング */
-.hint {
-  margin: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px; /* ヒント間のスペース */
-}
-
-/* 個々のヒントアイテムのスタイリング */
-.hint-item {
-  padding: 10px;
-  background-color: #ffffff; /* 白い背景色 */
-  border: 1px solid #ddd; /* 軽い境界線 */
-  border-radius: 8px; /* 角を丸くする */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* ソフトな影を追加 */
-  transition: box-shadow 0.3s ease-in-out;
-}
-
-.hint-item:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ホバー時に強調された影 */
-}
-
-/* ヒントテキストのスタイリング */
-.hint-text {
-  font-size: 16px;
-  color: #333;
-}
-
-
-.hint-index button {
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: bold;
-  color: white;
-  background-color: #3498db; /* 鮮やかな青色 */
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  outline: none;
-  transition: background-color 0.3s, transform 0.3s;
-}
-
-.hint-index button:hover {
-  background-color: #2980b9; /* 濃い青色に変更 */
-  transform: scale(1.05); /* 少し拡大 */
-}
-
-.hint-index button:active {
-  transform: scale(0.95); /* クリック時に少し縮小 */
-}
-
-
 
 
 .image-container img {
@@ -142,10 +90,12 @@
   padding: 0 20px 20px 20px; /* 左右下の余白を追加 */
   border-radius: 10px; /* コンテナの角を丸くする */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* コンテナに影を追加 */
+  overflow-y: scroll;
+  max-height: 400px;
 }
 
 .answer-text {
-  font-size: 30px;
+  font-size: 35px;
   color: #afd7b0; /* 回答の色 */
   margin-bottom: 20px; /* 回答テキストの下部に余白を追加 */
 }
@@ -160,9 +110,10 @@
 }
 
 .answer-explanation {
-  font-size: 20px;
+  font-size: 25px;
   color: #333; /* 説明の色 */
 }
+
 /* 画像をクリックすると答えと説明が表示されるスタイリング */
 .image-click-hint {
   position: relative; /* 答えと説明を絶対位置で配置 */

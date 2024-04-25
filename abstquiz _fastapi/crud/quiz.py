@@ -6,6 +6,7 @@ from google.cloud.firestore import CollectionReference, DocumentReference
 
 from logger_config import logger
 from services.image_processing import ImageProcessor, WebPTransformer
+from services.common import SignedURLGenerator
 
 
 def create_quiz(collection: CollectionReference, quiz_data: dict, quiz_set_title: str) -> DocumentReference:
@@ -24,9 +25,10 @@ def create_quiz(collection: CollectionReference, quiz_data: dict, quiz_set_title
         # uploaded_iamge_url = upload_image_to_storage(quiz_data["image"], bucket_name, destination_blob_name)
         image_processor = ImageProcessor(f'{bucket_name}', WebPTransformer())
 
-        uploaded_iamge_url = image_processor.upload_image_to_storage(
+        destination_blob_name = image_processor.upload_image_to_storage(
             quiz_data["image"], destination_blob_name)
-        quiz_data['image'] = uploaded_iamge_url  # 画像URLを更新
+
+        quiz_data['image'] = destination_blob_name  # 画像URLを更新
 
         # クイズデータをdbに追加
         try:
@@ -76,6 +78,10 @@ def fetch_all_quizzes(collection: CollectionReference) -> List[dict]:
     try:
         results = collection.stream()
         quizzes = []
+
+        if not results:
+            return quizzes
+
         for doc in results:
             quiz = get_and_validate_quiz(doc.reference)
             quizzes.append(quiz)
@@ -94,9 +100,8 @@ def fetch_quiz_detail(collection: CollectionReference, quiz_id) -> dict:
                      quiz_id}: {str(e)}", exc_info=True)
         raise
 
+
 # Todo 後で、更新者、更新日時を追加する様に修正
-
-
 def update_quiz_detail(collection: CollectionReference, quiz_id, update_data) -> dict:
     try:
         doc_ref = collection.document(quiz_id)
@@ -128,4 +133,7 @@ def get_and_validate_quiz(doc_ref: DocumentReference) -> dict:
             status_code=404, detail="Failed to retrieve the created quiz")
     quiz = quiz_doc.to_dict()
     quiz['id'] = quiz_doc.id  # ドキュメントIDを追加
+    # 署名付きURLで返す。
+    quiz["image"] = SignedURLGenerator.generate_signed_url(
+        os.environ.get('STORAGE_BUCKET_NAME'), quiz["image"], 600)
     return quiz

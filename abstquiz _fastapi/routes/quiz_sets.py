@@ -1,3 +1,5 @@
+from services.common import OpenAIClient
+from services.quiz_set_generate import ConceptGenerator
 from datetime import datetime, timezone
 import os
 from typing import List, Optional
@@ -11,8 +13,9 @@ from database import get_firestore_collection, get_firestore_client
 from logger_config import logger
 from crud.quiz_set import fetch_quiz_sets, add_quiz_set, delete_quiz_set
 from const import QUIZZES_COLLCTION_NAME, QUIZ_SETS_COLLCTION_NAME
-from services.quiz_generate import QuizGeneratorFacade
+from services.quiz_generate import QuizGeneratorFacade, MoeKyaraPromptGenerator
 from crud.quiz import create_quiz
+from services.common import get_class_by_name
 
 
 router = APIRouter(prefix="/quizsets", tags=["QuizSets"])
@@ -56,7 +59,8 @@ async def create_quiz_set(
     quizzes_collection: any = Depends(
         get_firestore_collection(QUIZZES_COLLCTION_NAME)),
     # current_user: dict = Depends(get_current_user)
-    current_user: str = "1"  # 未実装のため、仮の値を設定
+    current_user: str = "1",  # 未実装のため、仮の値を設定
+    prompt_type: str = "PromptGenerator"
 ):
     try:
         jst = timezone('Asia/Tokyo')
@@ -74,9 +78,20 @@ async def create_quiz_set(
         }
         quiz_set_id = add_quiz_set(quiz_sets_collection, quiz_set_info)
 
+        # 生成する画像のタイプを指定
+        try:
+            PromptGeneratorClass = get_class_by_name(
+                "services.quiz_generate", prompt_type)
+        except Exception as e:
+            logger.error(f"Failed to get prompt_type_class by name: {
+                         str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=400, detail="No such prompt_type_class by name")
+
+        # クイズを作成する
         failed_quiz_title_list = []  # 生成に失敗したクイズタイトルのリスト
-        api_key = os.environ.get('OPENAI_API_KEY')
-        quiz_generator = QuizGeneratorFacade(api_key)
+
+        quiz_generator = QuizGeneratorFacade(PromptGeneratorClass)
 
         # openaiを使用してクイズを生成する
         for quiz_title in quiz_title_list:
@@ -132,3 +147,19 @@ async def get_quiz_sets(
         # クライアントには汎用的なエラーメッセージを返す
         raise HTTPException(
             status_code=500, detail="An unexpected error occurred while fetching quiz sets.")
+
+
+@router.get("/concepts", response_model=List[str])  # レスポンスの型を指定
+async def get_concepts(
+    quiz_set_title: str,
+    num: int = Query(default=10, ge=1, le=100),
+):
+    try:
+        api_key = os.environ.get('OPENAI_API_KEY')
+        concepts = ConceptGenerator(OpenAIClient(
+            api_key)).generate_concepts(quiz_set_title, num)
+        return concepts
+    except Exception as e:
+        logger.error(f"Failed to generate concepts: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="Failed to generate concepts")

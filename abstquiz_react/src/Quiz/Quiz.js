@@ -4,6 +4,8 @@ import Question from './Question/Question';
 import { fetchData } from '../common/api'; 
 import './Quiz.css';
 
+import Hint from './Hint/Hint';
+
 function Quiz() {
   const { id } = useParams(); 
   const { title } = useParams();
@@ -14,29 +16,16 @@ function Quiz() {
   const [data, setData] = useState([]);
   const [hintIndex, setHintIndex] = useState(0);
   const [isLoading, setLoading] = useState(true);  // 画像のローディング状態を追跡
-  const [error, setError] = useState(null);
 
 
   useEffect(() => {
     const loadData = async () => {
-      
-      // const paddedData = result.map(item => {
-      //   let paddedExplanation = item.explanation;
-      //   if (paddedExplanation.length < 1000) {
-      //     paddedExplanation += ' '.repeat(1000 - paddedExplanation.length);
-      //   } else if (paddedExplanation.length > 1000) {
-      //     paddedExplanation = paddedExplanation.substring(0, 1000);
-      //   }
-      //   return { ...item, explanation: paddedExplanation };
-      // });
-      // setData(paddedData);
       
       try {
         setLoading(true);
         const result = await fetchData(`quiz/${id}`); 
         setData(result);
       } catch (err) {
-        setError('データの取得に失敗しました。');
         console.error(err);
       } finally {
         setLoading(false);
@@ -72,24 +61,38 @@ function Quiz() {
   };
 
 
+      // レンダリング部分
+      if (!data) {
+        return <div>Loading...</div>; // データがまだ利用できない場合はローディングメッセージを表示
+      }
+    
+
   // ヒントを次へ進めるハンドラ
   const showNextHint = () => {
-      if (hintIndex < data[currentQuestionIndex].hints.length) {
-      setHintIndex(hintIndex + 1); // ヒントインデックスを増やす
-      }};
+    if (hintIndex < data[currentQuestionIndex].hints.length) {
+    setHintIndex(hintIndex + 1); // ヒントインデックスを増やす
+    }};
 
 
+  if (data.length === 0) {
+      return <div className="loader"></div>;
+  }
 
   return (
     <div className="Quiz">
       <div className="quiz-header">
         <h1>{decodedTitle}関連 </h1>
-        <div className="progress-indicator">
-                        問題 {currentQuestionIndex + 1} / {data.length}
-        </div>
-        <button className="back-button" onClick={handleBack} style={{ margin: '10px' }}>戻る</button>
+        
+          <div className="progress-indicator">
+                          問題 {currentQuestionIndex + 1} / {data.length}
+          </div>
+          <button className="back-button" onClick={handleBack} style={{ margin: '10px' }}>戻る</button>
+          {data.length > 0 && (
+            <Hint hintIndex={hintIndex} showNextHint={showNextHint} hints={data[currentQuestionIndex].hints} />
+          )}
       </div>
       <main>
+
         <div className="quiz-container">
           {data.length > 0 && (
             <Question
@@ -100,8 +103,6 @@ function Quiz() {
               onPrevious={handlePreviousQuestion}
               currentQuestionIndex={currentQuestionIndex}
               totalQuestions={data.length}
-              hintIndex={hintIndex}
-              showNextHint={showNextHint}
               isLoading={isLoading}
               setLoading={setLoading}
             />

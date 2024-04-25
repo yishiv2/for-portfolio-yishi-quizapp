@@ -23,10 +23,23 @@ app.add_middleware(
 async def read_root():
     return {"message": "Hello, World!!"}
 
+# import yaml
+# @app.get("/openapi.yaml", include_in_schema=False)
+# async def get_openapi_yaml():
+#     from fastapi.openapi.utils import get_openapi
+#     openapi_schema = get_openapi(
+#         title="My API", version="1.0.0", routes=app.routes)
+#     yaml_schema = yaml.dump(openapi_schema)
+#     return yaml_schema
+
 
 if os.environ.get("gcp") == "yes":
     entry_point = Agraffe.entry_point(app)
 
+
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from io import BytesIO
 
 import requests
@@ -69,12 +70,13 @@ class ImageProcessor:
             transformed_image_stream = self.transformer.transform(
                 response.content)
 
+            destination_blob_name += datetime.now().strftime('%Y%m%d%H%M%S') + '.webp'
             bucket = self.storage_client.bucket(self.bucket_name)
-            blob = bucket.blob(destination_blob_name + '.webp')
+            blob = bucket.blob(destination_blob_name)
             blob.upload_from_file(transformed_image_stream,
                                   content_type='image/webp')
 
-            return blob.public_url
+            return destination_blob_name
         except Exception as e:
             logger.error(f"Failed to upload image to storage: {
                          str(e)}", exc_info=True)
