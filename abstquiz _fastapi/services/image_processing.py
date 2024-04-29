@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import asyncio
 from datetime import datetime
 from io import BytesIO
 
@@ -42,50 +43,53 @@ class WebPTransformer(ImageTransformer):
         return output_stream
 
 
-# 画像処理およびアップロードを管理するクラス
 class ImageProcessor:
-    def __init__(self, bucket_name: str, transformer: ImageTransformer):
-        """
-        ImageProcessorのコンストラクタ。
-
-        :param bucket_name: 画像をアップロードするGoogle Cloud Storageのバケット名。
-        :param transformer: 画像変換を担当するTransformerオブジェクト。
-        """
+    def __init__(self, bucket_name: str, transformer: ImageTransformer = WebPTransformer):
         self.bucket_name = bucket_name
         self.storage_client = storage.Client()
-        self.transformer = transformer
+        self.transformer = transformer()
 
-    def upload_image_to_storage(self, image_url: str, destination_blob_name: str) -> str:
-        """
-        指定されたURLから画像をダウンロードし、変換後にGoogle Cloud Storageにアップロードします。
+    async def upload_image_to_storage_async(self, image_url: str, destination_blob_name: str) -> str:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,  # Default executor
+            self._upload_image_to_storage_sync,
+            image_url,
+            destination_blob_name
+        )
 
-        :param image_url: ダウンロードする画像のURL。
-        :param destination_blob_name: アップロード後のバケット内でのファイル名。
-        :return: アップロードされた画像の公開URL。
-        """
+    def _upload_image_to_storage_sync(self, image_url: str, destination_blob_name: str) -> str:
         try:
             response = requests.get(image_url)
             response.raise_for_status()
 
+            # 変換処理の呼び出し
             transformed_image_stream = self.transformer.transform(
                 response.content)
 
+            # blob名にタイムスタンプを追加
             destination_blob_name += datetime.now().strftime('%Y%m%d%H%M%S') + '.webp'
             bucket = self.storage_client.bucket(self.bucket_name)
             blob = bucket.blob(destination_blob_name)
+
+            # ファイルをアップロード
             blob.upload_from_file(transformed_image_stream,
                                   content_type='image/webp')
 
             return destination_blob_name
         except Exception as e:
-            logger.error(f"Failed to upload image to storage: {
-                         str(e)}", exc_info=True)
+            logger.error(f"Failed to upload image to storage: {str(e)}")
             raise
 
-    def delete_blob(self, blob_name):
-        """
-        Google Cloud Storageから特定のファイルを削除します。
-        """
+    async def delete_blob_async(self, blob_name):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            None,  # Default executor
+            self._delete_blob_sync,
+            blob_name
+        )
+
+    def _delete_blob_sync(self, blob_name):
         try:
             bucket = self.storage_client.bucket(self.bucket_name)
             blob = bucket.blob(blob_name)
@@ -94,3 +98,56 @@ class ImageProcessor:
             logger.error(f"Failed to delete blob({blob_name}): {
                          str(e)}", exc_info=True)
             raise
+
+
+# # 画像処理およびアップロードを管理するクラス
+# class ImageProcessor:
+#     def __init__(self, bucket_name: str, transformer: ImageTransformer):
+#         """
+#         ImageProcessorのコンストラクタ。
+
+#         :param bucket_name: 画像をアップロードするGoogle Cloud Storageのバケット名。
+#         :param transformer: 画像変換を担当するTransformerオブジェクト。
+#         """
+#         self.bucket_name = bucket_name
+#         self.storage_client = storage.Client()
+#         self.transformer = transformer
+
+#     def upload_image_to_storage(self, image_url: str, destination_blob_name: str) -> str:
+#         """
+#         指定されたURLから画像をダウンロードし、変換後にGoogle Cloud Storageにアップロードします。
+
+#         :param image_url: ダウンロードする画像のURL。
+#         :param destination_blob_name: アップロード後のバケット内でのファイル名。
+#         :return: アップロードされた画像の公開URL。
+#         """
+#         try:
+#             response = requests.get(image_url)
+#             response.raise_for_status()
+
+#             transformed_image_stream = self.transformer.transform(
+#                 response.content)
+
+#             destination_blob_name += datetime.now().strftime('%Y%m%d%H%M%S') + '.webp'
+#             bucket = self.storage_client.bucket(self.bucket_name)
+#             blob = bucket.blob(destination_blob_name)
+#             blob.upload_from_file(transformed_image_stream,
+#                                   content_type='image/webp')
+#             return destination_blob_name
+#         except Exception as e:
+#             logger.error(f"Failed to upload image to storage: {
+#                          str(e)}", exc_info=True)
+#             raise
+
+#     def delete_blob(self, blob_name):
+#         """
+#         Google Cloud Storageから特定のファイルを削除します。
+#         """
+#         try:
+#             bucket = self.storage_client.bucket(self.bucket_name)
+#             blob = bucket.blob(blob_name)
+#             blob.delete()
+#         except Exception as e:
+#             logger.error(f"Failed to delete blob({blob_name}): {
+#                          str(e)}", exc_info=True)
+#             raise

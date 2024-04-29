@@ -6,7 +6,7 @@ from pytz import timezone
 
 from schemas.quiz import QuizCreateRequest, QuizResponse, QuizDetailResponse, QuizUpdateRequest
 from crud.quiz import (fetch_quiz_detail, update_quiz_detail, delete_quiz_item, fetch_all_quizzes,
-                       fetch_quizzes_by_set_id, create_quiz_in_db, get_and_validate_quiz)
+                       fetch_quizzes_by_set_id, create_quiz_in_db, add_ids_to_quizzes_from_results)
 from database import get_firestore_collection
 from logger_config import logger
 from const import QUIZZES_COLLCTION_NAME
@@ -33,7 +33,7 @@ async def create_quiz_item(quiz_data: QuizCreateRequest, collection: any = Depen
         # Firestoreにクイズを新規作成
         doc_ref = create_quiz_in_db(collection, insert_quiz_data)
         # Firestoreから作成されたクイズを取得し、検証
-        quiz = get_and_validate_quiz(doc_ref)
+        quiz = add_ids_to_quizzes_from_results(doc_ref)
         return QuizResponse(**quiz)
     except HTTPException as http_exc:
         raise http_exc
@@ -47,7 +47,7 @@ async def create_quiz_item(quiz_data: QuizCreateRequest, collection: any = Depen
 @router.get("/{quiz_set_id}", response_model=List[QuizResponse])
 async def get_quizzes_by_set(quiz_set_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
-        quizzes = fetch_quizzes_by_set_id(collection, quiz_set_id)
+        quizzes = await fetch_quizzes_by_set_id(collection, quiz_set_id)
         if not quizzes:
             logger.error(f"No quizzes found for quiz set ID: {quiz_set_id}")
             raise HTTPException(
@@ -65,7 +65,7 @@ async def get_quizzes_by_set(quiz_set_id: str, collection: any = Depends(get_fir
 @router.get("", response_model=List[QuizResponse])
 async def get_all_quizzes(collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
-        quizzes = fetch_all_quizzes(collection)
+        quizzes = await fetch_all_quizzes(collection)
         if quizzes:
             return [QuizResponse(**quiz) for quiz in quizzes]
         else:
@@ -80,10 +80,13 @@ async def get_all_quizzes(collection: any = Depends(get_firestore_collection(QUI
 
 
 # 問題データを取得
-@router.get("/{quiz_id}", response_model=QuizDetailResponse)
+@router.get("/detail/{quiz_id}", response_model=QuizDetailResponse)
 async def get_quiz_detail(quiz_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
+        print("quiz_id", quiz_id)
         item = fetch_quiz_detail(collection, quiz_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Quiz not found")
         return QuizDetailResponse(**item)
     except HTTPException as http_exc:
         raise http_exc

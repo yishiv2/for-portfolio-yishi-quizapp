@@ -1,3 +1,6 @@
+
+import asyncio
+from crud.quiz_set import check_quiz_set, update_quiz_set
 from services.common import OpenAIClient
 from services.quiz_set_generate import ConceptGenerator
 from datetime import datetime, timezone
@@ -12,9 +15,11 @@ from schemas.quiz_sets import QuizSetResponse, QuizSetResponse, QuizSetCreateReq
 from database import get_firestore_collection, get_firestore_client
 from logger_config import logger
 from crud.quiz_set import fetch_quiz_sets, add_quiz_set, delete_quiz_set
+from crud.quiz import create_quiz_async
 from const import QUIZZES_COLLCTION_NAME, QUIZ_SETS_COLLCTION_NAME
-from services.quiz_generate import QuizGeneratorFacade, MoeKyaraPromptGenerator
-from crud.quiz import create_quiz
+# from crud.quiz import create_quiz
+from services.quiz_generate import QuizGeneratorFacade
+
 from services.common import get_class_by_name
 
 
@@ -66,17 +71,38 @@ async def create_quiz_set(
         jst = timezone('Asia/Tokyo')
         current_time = datetime.now(jst)
 
-        # クイズセット情報を作成する
-        quiz_set_info = {
-            "title": quiz_set_data.title,
-            "category": quiz_set_data.category,
-            "tag": quiz_set_data.tag,
-            "creater": current_user,
-            "updater": current_user,
-            "created_at": current_time,
-            "updated_at": current_time,
-        }
-        quiz_set_id = add_quiz_set(quiz_sets_collection, quiz_set_info)
+        # 同じタイトルのクイズセットが存在するか確認
+        quiz_set_id = check_quiz_set(quiz_sets_collection, quiz_set_data.title)
+        if quiz_set_id:
+            # すでに同じタイトルのクイズセットが存在する場合、updateを行う
+            logger.info(
+                f"Quiz set with the same title already exists. Updating quiz set...")
+
+            # 更新するクイズセットの情報を作成
+            quiz_set_info = {
+                "title": quiz_set_data.title,
+                "updater": current_user,
+                "updated_at": current_time,
+            }
+            if quiz_set_data.tag:
+                quiz_set_info.update({"tag": quiz_set_data.tag})
+            if quiz_set_data.category:
+                quiz_set_info.update({"category": quiz_set_data.category})
+
+            update_quiz_set(quiz_sets_collection, quiz_set_id, quiz_set_info)
+
+        else:
+            # すでに同じタイトルのクイズセットが存在しない場合、新規作成を行う
+            quiz_set_info = {
+                "title": quiz_set_data.title,
+                "category": quiz_set_data.category,
+                "tag": quiz_set_data.tag,
+                "creater": current_user,
+                "updater": current_user,
+                "created_at": current_time,
+                "updated_at": current_time,
+            }
+            quiz_set_id = add_quiz_set(quiz_sets_collection, quiz_set_info)
 
         # 生成する画像のタイプを指定
         try:
@@ -88,35 +114,25 @@ async def create_quiz_set(
             raise HTTPException(
                 status_code=400, detail="No such prompt_type_class by name")
 
-        # クイズを作成する
-        failed_quiz_title_list = []  # 生成に失敗したクイズタイトルのリスト
+        # 以降でクイズを作成する,openaiのレートリミットの変動を考慮してバッチ処理
+        sleep_time = 30
+        batch_size = 5
+        batches = [quiz_title_list[i:i + batch_size]
+                   for i in range(0, len(quiz_title_list), batch_size)]
 
-        quiz_generator = QuizGeneratorFacade(PromptGeneratorClass)
+        for quiz_title_list in batches:
+            tasks = [fetch_and_create_quiz(quiz_title, quiz_set_id, current_time, current_user, quizzes_collection, quiz_set_info["title"])
+                     for quiz_title in quiz_title_list]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # openaiを使用してクイズを生成する
-        for quiz_title in quiz_title_list:
-            try:
-                quiz_details = quiz_generator.generate_complete_quiz(
-                    quiz_title)
-                quiz_details.update({
-                    "quiz_set_id": quiz_set_id,
-                    "created_at": current_time,
-                    "updated_at": current_time,
-                    "creater": current_user,
-                    "updater": current_user
-                })
-                create_quiz(quizzes_collection, quiz_details,
-                            quiz_set_data.title)
-                logger.info(f"created quiz({quiz_title})")
-            except Exception as e:
-                logger.error(f"Failed to create quiz({quiz_title}): {
-                             str(e)}", exc_info=True)
-                failed_quiz_title_list.append(quiz_title)
+            failed_quiz_title_list = [
+                title for title, error in results if error]
+
+            await asyncio.sleep(sleep_time)
 
         if len(failed_quiz_title_list) == len(quiz_title_list):
-            # クイズの生成に全て失敗した場合、クイズセットを削除(ロールバック)
             logger.error("Failed to create all quizzes. Deleting quiz set...")
-            delete_quiz_set(quiz_sets_collection, quiz_set_id)
+            await delete_quiz_set(quiz_sets_collection, quiz_set_id)
 
         return QuizSetResponse(id=quiz_set_id, **quiz_set_info)
     except Exception as e:
@@ -125,17 +141,42 @@ async def create_quiz_set(
             status_code=500, detail="Failed to create quiz set")
 
 
+async def fetch_and_create_quiz(quiz_title, quiz_set_id, current_time, current_user, quizzes_collection, quiz_set_title):
+    try:
+        # クイズの非同期生成
+        quiz_generator_type = get_class_by_name(
+            "services.quiz_generate", "PromptGenerator")
+        quiz_generator = QuizGeneratorFacade(quiz_generator_type)
+
+        quiz_details = await quiz_generator.generate_complete_quiz(quiz_title)
+        quiz_details.update({
+            "quiz_set_id": quiz_set_id,
+            "created_at": current_time,
+            "updated_at": current_time,
+            "creater": current_user,
+            "updater": current_user
+        })
+        # 非同期でFirestoreにデータを挿入
+        await create_quiz_async(quizzes_collection, quiz_details, quiz_set_title)
+        return quiz_title, None
+    except Exception as e:
+        logger.error(f"Failed to create quiz({quiz_title}): {
+                     str(e)}", exc_info=True)
+        return quiz_title, e
+
+
 @router.get("", response_model=List[QuizSetResponse])
 async def get_quiz_sets(
     collection: any = Depends(
         get_firestore_collection(QUIZ_SETS_COLLCTION_NAME)),
     category: Optional[str] = None,
     tag: Optional[str] = None,
+    title: Optional[str] = None,
     start: Optional[str] = None,
-    limit: int = Query(default=10, ge=1, le=100)
+    limit: int = Query(default=100, ge=1, le=100)
 ):
     try:
-        items = fetch_quiz_sets(collection, category, tag, start, limit)
+        items = fetch_quiz_sets(collection, category, tag, title, start, limit)
         return [QuizSetResponse(**item) for item in items]
     except HTTPException as e:
         logger.error(f"HTTP error occurred: {e.detail}")

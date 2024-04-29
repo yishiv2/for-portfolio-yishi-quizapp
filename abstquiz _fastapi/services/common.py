@@ -1,12 +1,18 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 import importlib
+import json
 import os
+import urllib.parse
 
 from openai import OpenAI
+from google.auth.transport.requests import Request
 from google.cloud import storage
 from google.cloud import secretmanager
 from google.oauth2 import service_account
 from openai import OpenAI
+
+from logger_config import logger
 
 
 class OpenAIClient:
@@ -14,45 +20,48 @@ class OpenAIClient:
         self.client = OpenAI(api_key=api_key)
 
 
+class CredentialManager:
+    @staticmethod
+    def get_secret(secret_id, project_id):
+        """ Google Cloud Secret Manager からシークレットを取得 """
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+        response = client.access_secret_version(request={"name": name})
+        return response.payload.data.decode('UTF-8')
+
+    @staticmethod
+    def get_credentials(secret_id, project_id):
+        """ シークレットからサービスアカウントの認証情報を生成 """
+        secret_data = CredentialManager.get_secret(secret_id, project_id)
+        service_account_info = json.loads(secret_data)
+        credentials = service_account.Credentials.from_service_account_info(
+            service_account_info, scopes=['https://www.googleapis.com/auth/cloud-platform'])
+        if not credentials.valid:
+            credentials.refresh(Request())
+        return credentials
+
+
 class SignedURLGenerator:
     @classmethod
-    def generate_signed_url(cls, bucket_name, destination_blob_name, expiration_time):
-        # Secret Managerからサービスアカウントキーを取得
-        credentials_json = cls.get_secret()
-
-        # 文字列から直接認証情報を作成
-        credentials = service_account.Credentials.from_service_account_info(
-            credentials_json)
-
-        # ストレージクライアントを初期化
-        storage_client = storage.Client(credentials=credentials)
+    async def async_generate_signed_url(cls, bucket_name, object_name, expiration_seconds,
+                                        project_id=os.getenv('PROJECT_ID')):
+        # ストレージクライアントをセットアップ
+        storage_client = storage.Client(project=project_id)
         bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(destination_blob_name)
+        blob = bucket.blob(object_name)
 
         # 有効期限を設定
         expiration = datetime.now(timezone.utc) + \
-            timedelta(hours=expiration_time)
+            timedelta(seconds=expiration_seconds)
 
-        # 署名付きURLを生成
-        signed_url = blob.generate_signed_url(expiration=expiration)
+        # 署名付きURLを生成するための関数をラップし、非同期で実行
+        loop = asyncio.get_running_loop()
+        signed_url = await loop.run_in_executor(
+            None,  # Noneはデフォルトのエグゼキュータを使用することを意味します
+            blob.generate_signed_url,
+            expiration
+        )
         return signed_url
-
-    @classmethod
-    def get_secret(cls):
-        # Secret Managerクライアントの初期化
-        client = secretmanager.SecretManagerServiceClient()
-
-        project_id = os.environ.get("PROJECT_ID")
-        secretmanager_locate = f"projects/{
-            project_id}/secrets/key/versions/latest"
-
-        # Secret Managerから秘密情報を取得
-        response = client.access_secret_version(
-            request={"name": secretmanager_locate})
-        secret_string = response.payload.data.decode("UTF-8")
-
-        # JSON文字列をPythonの辞書に変換
-        return eval(secret_string)
 
 
 def get_class_by_name(module_name, class_name):

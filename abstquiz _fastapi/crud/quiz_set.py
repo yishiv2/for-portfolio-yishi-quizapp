@@ -8,7 +8,18 @@ from schemas.quiz import QuizCreateRequest
 from logger_config import logger
 
 
-def fetch_quiz_sets(collection: CollectionReference, category=None, tags=None, start=None, limit=10) -> list:
+def add_quiz_set(collection: CollectionReference, quiz_set_info: dict) -> str:
+    try:
+        doc_ref = collection.add(quiz_set_info)
+        # 追加されたドキュメントのIDを返す
+        return doc_ref[1].id
+    except Exception as e:
+        logger.error(f"Error creating quiz sets: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="An error occurred while creating quiz sets.")
+
+
+def fetch_quiz_sets(collection: CollectionReference, category=None, tags=None, title=None, start=None, limit=10) -> list:
     try:
         query = collection
 
@@ -24,6 +35,11 @@ def fetch_quiz_sets(collection: CollectionReference, category=None, tags=None, s
         query = query.limit(limit)
         results = query.stream()
         quizzes = [{**doc.to_dict(), 'id': doc.id} for doc in results]
+
+        if title:
+            # python側でtitleでフィルタリング(firestore側ではできないため)
+            quizzes = [quiz for quiz in quizzes if title in quiz['title']]
+
         return quizzes
     except Exception as e:
         logger.error(f"Error fetching quiz sets: {str(e)}", exc_info=True)
@@ -31,15 +47,15 @@ def fetch_quiz_sets(collection: CollectionReference, category=None, tags=None, s
             status_code=500, detail="An error occurred while fetching quiz sets.")
 
 
-def add_quiz_set(collection: CollectionReference, quiz_set_info: dict) -> str:
+def update_quiz_set(collection: CollectionReference, quiz_set_id: str, quiz_set_info: dict) -> None:
     try:
-        doc_ref = collection.add(quiz_set_info)
-        # 追加されたドキュメントのIDを返す
-        return doc_ref[1].id
+        doc_ref = collection.document(quiz_set_id)
+        doc_ref.update(quiz_set_info)
+
     except Exception as e:
-        logger.error(f"Error creating quiz sets: {str(e)}", exc_info=True)
+        logger.error(f"Error updating quiz set: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while creating quiz sets.")
+            status_code=500, detail="An error occurred while updating quiz set.")
 
 
 def delete_quiz_set(collection: CollectionReference, quiz_set_id: str) -> None:
@@ -50,6 +66,20 @@ def delete_quiz_set(collection: CollectionReference, quiz_set_id: str) -> None:
         logger.error(f"Error deleting quiz set: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="An error occurred while deleting quiz set.")
+
+
+# 同じタイトルのクイズセットが存在するか確認する関数。あればドキュメントID,creator,create_dateを返す
+def check_quiz_set(collection: CollectionReference, title: str) -> str:
+    try:
+        query = collection.where('title', '==', title)
+        results = query.stream()
+        for doc in results:
+            return doc.id
+        return None
+    except Exception as e:
+        logger.error(f"Error checking quiz set: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="An error occurred while checking quiz set.")
 
 
 # @transactional
