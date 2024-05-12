@@ -43,10 +43,11 @@ class CredentialManager:
 
 class SignedURLGenerator:
     @classmethod
-    async def async_generate_signed_url(cls, bucket_name, object_name, expiration_seconds,
-                                        project_id=os.getenv('PROJECT_ID')):
+    async def async_generate_signed_url(cls, bucket_name, object_name, expiration_seconds, SignedURL_credentials):
         # ストレージクライアントをセットアップ
-        storage_client = storage.Client(project=project_id)
+        storage_client = storage.Client(
+            project=os.getenv('PROJECT_ID'), credentials=SignedURL_credentials)
+        # storage_client = storage.Client(project=project_id)
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(object_name)
 

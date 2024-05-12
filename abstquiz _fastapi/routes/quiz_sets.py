@@ -1,4 +1,6 @@
 
+from schemas.auth import DecodedToken
+from typing import Annotated
 import asyncio
 from crud.quiz_set import check_quiz_set, update_quiz_set
 from services.common import OpenAIClient
@@ -21,13 +23,16 @@ from const import QUIZZES_COLLCTION_NAME, QUIZ_SETS_COLLCTION_NAME
 from services.quiz_generate import QuizGeneratorFacade
 
 from services.common import get_class_by_name
+from crud.auth import get_current_user
 
 
 router = APIRouter(prefix="/quizsets", tags=["QuizSets"])
+UserDependency = Annotated[DecodedToken, Depends(get_current_user)]
 
 
 # @router.post("", response_model=QuizSetResponse)
 # async def create_quiz_set(
+#     user: UserDependency,
 #     quiz_set_data: QuizSetCreateRequest,
 #     db: firestore.Client = Depends(get_firestore_client),
 #     quiz_sets_collection: any = Depends(get_firestore_collection(QUIZ_SETS_COLLCTION_NAME)),
@@ -56,6 +61,7 @@ router = APIRouter(prefix="/quizsets", tags=["QuizSets"])
 
 @router.post("", response_model=QuizSetResponse)
 async def create_quiz_set(
+    user: UserDependency,
     quiz_set_data: QuizSetCreateRequest,
     quiz_title_list: List[str] = [],
     db: firestore.Client = Depends(get_firestore_client),
@@ -167,6 +173,7 @@ async def fetch_and_create_quiz(quiz_title, quiz_set_id, current_time, current_u
 
 @router.get("", response_model=List[QuizSetResponse])
 async def get_quiz_sets(
+    user: UserDependency,
     collection: any = Depends(
         get_firestore_collection(QUIZ_SETS_COLLCTION_NAME)),
     category: Optional[str] = None,
@@ -174,6 +181,7 @@ async def get_quiz_sets(
     title: Optional[str] = None,
     start: Optional[str] = None,
     limit: int = Query(default=100, ge=1, le=100)
+
 ):
     try:
         items = fetch_quiz_sets(collection, category, tag, title, start, limit)
@@ -192,6 +200,7 @@ async def get_quiz_sets(
 
 @router.get("/concepts", response_model=List[str])  # レスポンスの型を指定
 async def get_concepts(
+    user: UserDependency,
     quiz_set_title: str,
     num: int = Query(default=10, ge=1, le=100),
 ):

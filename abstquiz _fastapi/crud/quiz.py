@@ -11,7 +11,7 @@ from google.cloud.firestore import CollectionReference, DocumentReference
 from const import SIGNED_URL_EXPIRATION
 from logger_config import logger
 from services.image_processing import ImageProcessor, WebPTransformer
-from services.common import SignedURLGenerator
+from services.common import SignedURLGenerator, CredentialManager
 
 
 # def create_quiz(collection: CollectionReference, quiz_data: dict, quiz_set_title: str) -> DocumentReference:
@@ -206,12 +206,14 @@ def add_ids_to_quizzes_from_results(results):
 
 
 async def update_quizzes_with_signed_urls(quizzes):
+    SignedURL_credentials = CredentialManager.get_credentials(
+        "s_key", os.getenv('PROJECT_ID'))
     tasks = []
     for quiz in quizzes:
         if "image" in quiz:
             task = SignedURLGenerator.async_generate_signed_url(
                 os.environ.get(
-                    'STORAGE_BUCKET_NAME'), quiz["image"], SIGNED_URL_EXPIRATION
+                    'STORAGE_BUCKET_NAME'), quiz["image"], SIGNED_URL_EXPIRATION, SignedURL_credentials
             )
             tasks.append(task)
         else:

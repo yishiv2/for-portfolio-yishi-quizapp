@@ -1,3 +1,4 @@
+from typing import Annotated
 from datetime import datetime
 from typing import List
 
@@ -10,14 +11,16 @@ from crud.quiz import (fetch_quiz_detail, update_quiz_detail, delete_quiz_item, 
 from database import get_firestore_collection
 from logger_config import logger
 from const import QUIZZES_COLLCTION_NAME
-
+from crud.auth import get_current_user
+from schemas.auth import DecodedToken
 
 router = APIRouter(prefix="/quiz", tags=["Question"])
-
-
+UserDependency = Annotated[DecodedToken, Depends(get_current_user)]
 # 問題を作成するAPIエンドポイント
+
+
 @router.post("", response_model=QuizResponse)
-async def create_quiz_item(quiz_data: QuizCreateRequest, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
+async def create_quiz_item(user: UserDependency, quiz_data: QuizCreateRequest, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
         jst = timezone('Asia/Tokyo')
         current_time = datetime.now(jst)
@@ -45,13 +48,16 @@ async def create_quiz_item(quiz_data: QuizCreateRequest, collection: any = Depen
 
 # 特定の問題セットに属する問題を取得
 @router.get("/{quiz_set_id}", response_model=List[QuizResponse])
-async def get_quizzes_by_set(quiz_set_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
+async def get_quizzes_by_set(user: UserDependency, quiz_set_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
         quizzes = await fetch_quizzes_by_set_id(collection, quiz_set_id)
         if not quizzes:
             logger.error(f"No quizzes found for quiz set ID: {quiz_set_id}")
             raise HTTPException(
                 status_code=404, detail="No quizzes found for this quiz set.")
+        import google.auth
+
+        credentials, project_id = google.auth.default()
         return [QuizResponse(**quiz) for quiz in quizzes]
     except HTTPException as e:
         logger.warning(f"HTTP error occurred: {str(e)}")
@@ -63,7 +69,7 @@ async def get_quizzes_by_set(quiz_set_id: str, collection: any = Depends(get_fir
 
 # 全ての問題データを取得
 @router.get("", response_model=List[QuizResponse])
-async def get_all_quizzes(collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
+async def get_all_quizzes(user: UserDependency, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
         quizzes = await fetch_all_quizzes(collection)
         if quizzes:
@@ -81,10 +87,9 @@ async def get_all_quizzes(collection: any = Depends(get_firestore_collection(QUI
 
 # 問題データを取得
 @router.get("/detail/{quiz_id}", response_model=QuizDetailResponse)
-async def get_quiz_detail(quiz_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
+async def get_quiz_detail(user: UserDependency, quiz_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
-        print("quiz_id", quiz_id)
-        item = fetch_quiz_detail(collection, quiz_id)
+        item = await fetch_quiz_detail(collection, quiz_id)
         if not item:
             raise HTTPException(status_code=404, detail="Quiz not found")
         return QuizDetailResponse(**item)
@@ -96,7 +101,7 @@ async def get_quiz_detail(quiz_id: str, collection: any = Depends(get_firestore_
 
 # 問題を更新
 @router.put("/{quiz_id}", response_model=QuizResponse)
-async def update_quiz_item(quiz_id: str, update_data: QuizUpdateRequest, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
+async def update_quiz_item(user: UserDependency, quiz_id: str, update_data: QuizUpdateRequest, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
         jst = timezone('Asia/Tokyo')
         current_time = datetime.now(jst)
@@ -119,7 +124,7 @@ async def update_quiz_item(quiz_id: str, update_data: QuizUpdateRequest, collect
 
 
 @router.delete("/{quiz_id}", status_code=204)
-async def delete_quiz_item_api(quiz_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
+async def delete_quiz_item_api(user: UserDependency, quiz_id: str, collection: any = Depends(get_firestore_collection(QUIZZES_COLLCTION_NAME))):
     try:
         delete_quiz_item(collection, quiz_id)
         return {"detail": "Quiz deleted successfully"}
