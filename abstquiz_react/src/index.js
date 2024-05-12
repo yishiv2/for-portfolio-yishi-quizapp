@@ -4,23 +4,41 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
 import QuizList from './QuizList/QuizList';  // クイズ一覧コンポーネント
 import Quiz from './Quiz/Quiz';  // クイズ実施コンポーネント
 import './App.css'; 
+import LoginPage from './auth/LoginPage';
+import { AuthProvider } from './auth/AuthContext';
+import { useAuth } from './auth/AuthContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+function ProtectedRoute({ children }) {
+  const { authToken } = useAuth();
+  return authToken ? children : <Navigate to="/login" />;
+}
+
 root.render(
   <React.StrictMode>
-    <Router>
-      <Routes>
-        <Route path="/" element={<App />}>
-          <Route index element={<QuizList />} />
-          <Route path="quizset" element={<QuizList />} />
-          <Route path="quizset/:id/:title" element={<Quiz />} />
-        </Route>
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<App />}>
+            <Route index element={<QuizList />} />
+            <Route path="quizset" element={
+              <ProtectedRoute>
+                <QuizList />
+              </ProtectedRoute>} />
+            <Route path="quizset/:id/:title" element={
+              <ProtectedRoute>
+                <Quiz />
+              </ProtectedRoute>
+            } />
+            <Route path="login" element={<LoginPage />} />
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
   </React.StrictMode>
 );
 

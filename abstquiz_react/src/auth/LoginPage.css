@@ -1,0 +1,40 @@
+.form-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.form-input input {
+    width: calc(100% - 20px); /* Adjust width to account for padding */
+    padding: 10px; /* Provides padding inside the input */
+    margin-top: 2px; /* Optional: Adds space above the input */
+    border: 1px solid #ccc; /* Standardizes border appearance */
+    box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+}
+
+.form-input {
+    margin-bottom: 20px; /* Adds space below each input group */
+    display: flex; /* Aligns label and input horizontally */
+    flex-direction: column; /* Stacks elements vertically */
+}
+
+.form-input label {
+    margin-bottom: 5px; /* Space between label and input */
+}
+
+.form-button {
+    width: 100%;
+    padding: 10px;
+    font-size: 18px;
+    color: white;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-button:hover {
+    background-color: #0056b3;
+}

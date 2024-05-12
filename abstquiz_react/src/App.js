@@ -11,8 +11,8 @@ function App() {
             <h1>(β版)</h1>
             <nav>
               <ul>
-                <li style={{ cursor: 'not-allowed' }}>
-                  <span style={{ cursor: 'not-allowed', color: '#aaa' }}>Login</span>
+              <li>
+                  <Link to={`/login`}>Login</Link>
                 </li>
                 <li>
                   <Link to={`/quizset`}>問題集一覧</Link>
